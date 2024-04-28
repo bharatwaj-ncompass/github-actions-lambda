@@ -2,7 +2,7 @@ name: Deploying Lambda
 on:
   push:
     branches:
-      - lambda-deploy
+      - main
 jobs:
   lambda1:
     runs-on: self-hosted
