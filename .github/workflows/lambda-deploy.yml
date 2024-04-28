@@ -2,7 +2,7 @@ name: Deploying Lambda
 on:
   push:
     branches:
-      - main
+      - lambda-deploy
 jobs:
   lambda1:
     runs-on: self-hosted
@@ -10,8 +10,8 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
         with:
-          node-version: 18
-      - uses: aws-actions/configure-aws-credentials@v2
+          node-version: 20
+      - uses: aws-actions/configure-aws-credentials@v3
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -20,20 +20,31 @@ jobs:
       - name: Check Lambda Function Existence
         id: check_lambda1_existence
         run: |
-          aws lambda get-function --function-name lambda1 || echo "Function does not exist"
+          echo "function-create=no" >> "$GITHUB_OUTPUT"
+          aws lambda get-function --function-name lambda1 || echo "function-create=yes" >> "$GITHUB_OUTPUT"
+        # outputs:
+        #   function-create: ${{ steps.check_lambda1_existence.outputs.function-create }}  
       # Create lambda1 function if it doesn't exist
       - name: Create Lambda Function
-        if: steps.check_lambda1_existence.outputs.stdout == 'Function does not exist'
+        # needs: check_lambda1_existence
+        # if: steps.check_lambda1_existence.outputs.stdout == 'Function does not exist'
+        if: ${{ steps.check_lambda1_existence.outputs.function-create == 'yes' }}
         run: |
+          echo "Creating lambda"
+          zip -j lambda1.zip ./src/index.js
           aws lambda create-function \
             --function-name lambda1 \
             --runtime nodejs18.x \
             --handler index.handler \
             --zip-file fileb://lambda1.zip \
             --role arn:aws:iam::368355641188:role/temp-lambda-role
-      # Update lambda1 function code
+          sleep 2
+          echo "Moving to next step post creation of lamdba"
+      # Update lambda1 function code.
       - name: Update Lambda Function Code
-        if: steps.check_lambda1_existence.outputs.stdout != 'Function does not exist'
+        # needs: check_lambda1_existence
+        if: ${{ steps.check_lambda1_existence.outputs.function-create != 'yes' }}
         run: |
           zip -j lambda1.zip ./src/index.js
           aws lambda update-function-code --function-name=lambda1 --zip-file=fileb://lambda1.zip
+
