@@ -8,15 +8,18 @@ jobs:
     runs-on: self-hosted
     steps:
       - uses: actions/checkout@v3
+
       - uses: actions/setup-node@v3
         with:
           node-version: 20
+
       - uses: aws-actions/configure-aws-credentials@v3
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
       # Check if lambda1 function exists
+
       - name: Check Lambda Function Existence
         id: check_lambda1_existence
         run: |
@@ -25,6 +28,7 @@ jobs:
         # outputs:
         #   function-create: ${{ steps.check_lambda1_existence.outputs.function-create }}  
       # Create lambda1 function if it doesn't exist
+
       - name: Create Lambda Function
         # needs: check_lambda1_existence
         # if: steps.check_lambda1_existence.outputs.stdout == 'Function does not exist'
@@ -41,6 +45,7 @@ jobs:
           sleep 2
           echo "Moving to next step post creation of lamdba"
       # Update lambda1 function code.
+      
       - name: Update Lambda Function Code
         # needs: check_lambda1_existence
         if: ${{ steps.check_lambda1_existence.outputs.function-create != 'yes' }}
